@@ -3,61 +3,178 @@ import {
   Text, 
   View, 
   FlatList, 
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
-import ModalItem  from './components/Modal';
-import AddItem from './components/AddItem';
-import styles from './styles';
+
+import { Button, TextInput } from 'react-native';
 
 export default function App() {  
-  const [ counter, setCounter ] = useState(3);
-  const [ listItem, setListItem ] = useState([{id:1, value:'Juan'},{id:2, value:'Pedro'}]);
-  const [ itemSelected, setItemSelected ] = useState({});
-  const [ modalVisible, setModalVisible ] = useState(false);
+  const [textItem, setTextItem] = useState('')
+  const [itemList, setItemList] = useState([])
 
-  
-  const onHandlerDelete = id => { 
-      console.log("Item " + itemSelected.value + " Eliminado");
-      setListItem( currenItems => currenItems.filter( item => item.id !== id ));
-      setItemSelected({});
-      setModalVisible(!modalVisible);
+  const [itemSelected, setItemSelected] = useState({})
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const [ counter, setCounter ] = useState(1);
+
+  const onHandlerChangeItem = (t) => setTextItem(t)
+
+  const onHandlerDelete = id => {
+    setItemList(currentItems => currentItems.filter(item => item.id !== id))
+    setItemSelected({})
+    setModalVisible(!modalVisible)
   }
   const onHandlerModal = id => {
-    setItemSelected(listItem.filter( item => item.id === id)[0]);
-    setModalVisible(!modalVisible);
-  }  
+    setItemSelected(itemList.filter(item => item.id === id)[0])
+    setModalVisible(!modalVisible)
+  }
+
+  const add = ()=> {
+    setItemList (currentItems => [...currentItems, {id: counter, value: textItem}
+    ])
+    setTextItem('')
+    setCounter( counter + 1)
+  }
   const closeModal = () => {
     setModalVisible(!modalVisible);
   }
-
-  const agregarItem = (textItem) => {   
-    console.log("Se Agrega.");
-    if(textItem!=="") {
-      console.log("Se agrego el item: " + textItem);
-      setListItem( currenItems => 
-        [...currenItems, {id: counter, value: textItem}]        
-      )
-      setCounter(counter + 1);
-    }
-  }
-  
   const renderItem = data => 
-      <Text 
-        style={styles.listItem} 
-        onPress={onHandlerModal.bind(this, data.item.id)}>
-          * {data.item.value} ({data.item.id})
-      </Text>
-
+    <Text 
+      style={styles.listItem} 
+      onPress={onHandlerModal.bind(this, data.item.id)}>
+        {data.item.id} -- {data.item.value}
+    </Text>
   return (
-    <View style={styles.container}>
-      <AddItem onAddItem={agregarItem}/>      
-      <View style={styles.listItemContainer}>
+    <View style ={styles.screen}>
+      <View style={styles.tituloApp}>
+        <Text style={styles.textoTituloApp}>Ingrese su lista de productos</Text>
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput 
+        placerholder="Item de lista" 
+        style={styles.input}
+        onChangeText={onHandlerChangeItem}
+        value={textItem}
+        />
+        <Button color='#336B5D' title="ADD" onPress={add} />
+      </View>
+      <View style={styles.itemList}>
         <FlatList
-          data={listItem}
+          data={itemList}
           renderItem={renderItem}
-          keyExtractor={ item => item.id }
+          keyExtractor={ item => item.id}
         />
       </View>
-      <ModalItem onDelete={onHandlerDelete} item={itemSelected} visible={modalVisible} onCancel={closeModal}/>
+
+      <Modal
+        transparent={true}
+        animationType='slide'
+        visible={modalVisible}
+      >
+        <View style={styles.modalCentered}>
+          <View style={styles.modalView}>
+            <View style={styles.tituloModal}>
+              <Text style={styles.textoTitulo}>Atención!</Text><Text style={styles.textoTitulo} onPress={closeModal.bind(this)}>X</Text>
+            </View>
+            <View style={styles.cuerpoModal}>
+              <View>
+                <Text> ¿Estas seguro que querés borrar?</Text>
+              </View>
+              <View>
+                <Text style={styles.modalItem}>{itemSelected.value}</Text>
+              </View>
+            </View>
+            <View style={styles.botonModal}>
+              <Button color='#336B5D' onPress={onHandlerDelete.bind(this, itemSelected.id)} title="Confirmar" />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex:1,
+    padding: 50,
+    backgroundColor: '#E0E5DA'
+  },
+  tituloApp: {
+    alignItems:'center',
+    justifyContent:'center'
+  },
+  textoTituloApp: {
+    color: '#336B5D',
+    fontWeight: 'bold',
+    fontSize: 25,
+    
+  },
+  inputContainer: {
+    
+    paddingTop: 10,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  input: {
+    width:200,
+    borderBottomColor: 'white',
+    borderBottomWidth: 5,
+    margin: 10,
+    padding: 20,
+    color: 'black'
+  },
+  itemList: {
+    justifyContent: 'center',
+    padding:40,
+    margin: 10,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    fontSize: 25
+  },
+  modalCentered: {
+    flex:1, 
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalView: {
+    borderRadius: 20,
+    width: 200,
+    height: 200,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: "hidden"
+  },
+  tituloModal: {
+    flex:2,
+    backgroundColor: '#336B5D',
+    width: '100%',
+    color: 'white',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    flexDirection: 'row',
+  },
+  cuerpoModal: {
+    flex:8,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  textoTitulo: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15
+  },
+  botonModal: {
+    flex:2,
+    paddingBottom: 10,
+    flexDirection: 'row'
+  }
+
+})
